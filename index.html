@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>底稿报送提醒 - 项目跟踪系统</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-gantt"></i> 底稿报送提醒</h1>
+            <p>项目跟踪与工作日提醒系统</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 统计面板 -->
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">项目总数</div>
+                </div>
+                <div class="stat-item warning">
+                    <div class="stat-value" id="warningCount">0</div>
+                    <div class="stat-label">即将到期</div>
+                </div>
+                <div class="stat-item danger">
+                    <div class="stat-value" id="dangerCount">0</div>
+                    <div class="stat-label">已超期</div>
+                </div>
+                <div class="stat-item success">
+                    <div class="stat-value" id="safeCount">0</div>
+                    <div class="stat-label">正常进行</div>
+                </div>
+            </div>
+
+            <!-- 添加项目表单 -->
+            <div class="add-section">
+                <h3><i class="fas fa-plus-circle"></i> 添加新项目</h3>
+                <div class="form-row">
+                    <input type="text" id="contractName" placeholder="项目名称">
+                    <input type="date" id="replyDate" placeholder="受理日期">
+                    <input type="date" id="issueDate" placeholder="发行日期">
+                    <button id="addBtn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 添加
+                    </button>
+                </div>
+            </div>
+
+            <!-- Excel导入区域 -->
+            <div class="import-section">
+                <h3><i class="fas fa-file-excel"></i> Excel批量导入</h3>
+                <div class="import-area">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;">
+                    <label for="excelFile" class="file-label">
+                        <i class="fas fa-upload"></i>
+                        <span>点击选择Excel文件</span>
+                    </label>
+                    <div class="file-info" id="fileInfo">
+                        <i class="fas fa-file-excel"></i>
+                        <span>支持 .xlsx 和 .xls 格式</span>
+                    </div>
+                    <button id="importBtn" class="btn btn-success" disabled>
+                        <i class="fas fa-download"></i> 导入数据
+                    </button>
+                </div>
+                <div class="import-tips">
+                    <p><i class="fas fa-info-circle"></i> Excel文件要求：</p>
+                    <ul>
+                        <li>第一行为表头，包含"项目名称"、"受理日期"和"发行日期"列</li>
+                        <li>日期格式支持：YYYY-MM-DD、YYYY/MM/DD、YYYY年MM月DD日</li>
+                        <li>支持多列数据，系统会自动识别关键列</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 甘特图表格 -->
+            <div class="gantt-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-table"></i> 项目跟踪甘特图</h2>
+                    <div class="legend">
+                        <span class="legend-item"><span class="dot safe"></span> 正常</span>
+                        <span class="legend-item"><span class="dot warning"></span> 40天提醒</span>
+                        <span class="legend-item"><span class="dot danger"></span> 45天超期</span>
+                    </div>
+                </div>
+
+                <div class="gantt-container">
+                    <table id="ganttTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">序号</th>
+                                <th style="width: 200px;">项目名称</th>
+                                <th style="width: 120px;">受理日期</th>
+                                <th style="width: 120px;">受理40天</th>
+                                <th style="width: 120px;">受理45天</th>
+                                <th style="width: 120px;">发行日期</th>
+                                <th style="width: 120px;">发行40天</th>
+                                <th style="width: 120px;">发行45天</th>
+                                <th style="width: 100px;">状态</th>
+                                <th style="flex: 1;">时间进度</th>
+                                <th style="width: 100px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ganttBody">
+                            <tr>
+                                <td colspan="11" class="empty">暂无项目记录，请添加新项目</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控件 -->
+                <div class="pagination-container" id="pagination">
+                    <button id="prevBtn" class="btn btn-secondary" onclick="prevPage()" disabled>
+                        <i class="fas fa-chevron-left"></i> 上一页
+                    </button>
+                    <span id="pageInfo" class="page-info">第 1 / 1 页，共 0 条</span>
+                    <button id="nextBtn" class="btn btn-secondary" onclick="nextPage()" disabled>
+                        下一页 <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 日历视图 -->
+            <div class="calendar-section">
+                <h3><i class="fas fa-calendar-alt"></i> 近期提醒视图</h3>
+                <div class="calendar-container" id="calendarContainer">
+                    <div class="calendar-legend">
+                        <span class="legend-item"><span class="dot today"></span> 今天</span>
+                        <span class="legend-item"><span class="dot reminder-40"></span> 40天提醒</span>
+                        <span class="legend-item"><span class="dot reminder-45"></span> 45天超期</span>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- 日历内容将由JS生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2024 底稿报送提醒 | 工作日提醒系统</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
