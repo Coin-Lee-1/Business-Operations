@@ -41,8 +41,12 @@
                 <h3><i class="fas fa-plus-circle"></i> 添加新项目</h3>
                 <div class="form-row">
                     <input type="text" id="contractName" placeholder="项目名称">
-                    <input type="date" id="replyDate" placeholder="受理日期">
-                    <input type="date" id="issueDate" placeholder="发行日期">
+                    <input type="text" id="contactPerson" placeholder="对接人">
+                    <select id="dateType" class="date-type-select">
+                        <option value="accept">受理日期</option>
+                        <option value="issue">发行日期</option>
+                    </select>
+                    <input type="date" id="projectDate" placeholder="选择日期">
                     <button id="addBtn" class="btn btn-primary">
                         <i class="fas fa-plus"></i> 添加
                     </button>
@@ -69,9 +73,10 @@
                 <div class="import-tips">
                     <p><i class="fas fa-info-circle"></i> Excel文件要求：</p>
                     <ul>
-                        <li>第一行为表头，包含"项目名称"、"受理日期"和"发行日期"列</li>
+                        <li>第一行为表头，包含"项目名称"、"对接人"和日期列</li>
+                        <li>支持格式1：项目名称、对接人、受理日期、发行日期（同时包含）</li>
+                        <li>支持格式2：项目名称、对接人、日期类型、日期（日期类型填写"受理"或"发行"）</li>
                         <li>日期格式支持：YYYY-MM-DD、YYYY/MM/DD、YYYY年MM月DD日</li>
-                        <li>支持多列数据，系统会自动识别关键列</li>
                     </ul>
                 </div>
             </div>
@@ -87,26 +92,43 @@
                     </div>
                 </div>
 
+                <!-- 视图切换选项卡和批量操作 -->
+                <div class="view-tabs">
+                    <button id="acceptTab" class="tab-btn active" onclick="switchView('accept')">
+                        <i class="fas fa-calendar-check"></i> 受理日跟踪
+                    </button>
+                    <button id="issueTab" class="tab-btn" onclick="switchView('issue')">
+                        <i class="fas fa-calendar-alt"></i> 发行日跟踪
+                    </button>
+                    <div class="batch-actions">
+                        <button id="batchDeleteBtn" class="btn btn-danger batch-btn" onclick="batchDelete()" disabled>
+                            <i class="fas fa-trash"></i> 批量删除
+                        </button>
+                    </div>
+                </div>
+
                 <div class="gantt-container">
                     <table id="ganttTable">
                         <thead>
                             <tr>
-                                <th style="width: 80px;">序号</th>
-                                <th style="width: 200px;">项目名称</th>
-                                <th style="width: 120px;">受理日期</th>
-                                <th style="width: 120px;">受理40天</th>
-                                <th style="width: 120px;">受理45天</th>
-                                <th style="width: 120px;">发行日期</th>
-                                <th style="width: 120px;">发行40天</th>
-                                <th style="width: 120px;">发行45天</th>
-                                <th style="width: 100px;">状态</th>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                                </th>
+                                <th style="width: 60px;">序号</th>
+                                <th style="width: 180px;">项目名称</th>
+                                <th style="width: 120px;">对接人</th>
+                                <th style="width: 130px;">基准日期</th>
+                                <th style="width: 130px;">40天提醒</th>
+                                <th style="width: 130px;">45天截止</th>
+                                <th style="width: 100px;">倒计时</th>
+                                <th style="width: 110px;">状态</th>
                                 <th style="flex: 1;">时间进度</th>
-                                <th style="width: 100px;">操作</th>
+                                <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="ganttBody">
                             <tr>
-                                <td colspan="11" class="empty">暂无项目记录，请添加新项目</td>
+                                <td colspan="10" class="empty">暂无项目记录，请添加新项目</td>
                             </tr>
                         </tbody>
                     </table>
@@ -121,6 +143,39 @@
                     <button id="nextBtn" class="btn btn-secondary" onclick="nextPage()" disabled>
                         下一页 <i class="fas fa-chevron-right"></i>
                     </button>
+                </div>
+            </div>
+
+            <!-- 编辑弹窗 -->
+            <div id="editModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-edit"></i> 编辑项目</h3>
+                        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editId">
+                        <div class="form-group">
+                            <label>项目名称</label>
+                            <input type="text" id="editName" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>对接人</label>
+                            <input type="text" id="editContact" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>受理日期</label>
+                            <input type="date" id="editAcceptDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>发行日期（可选）</label>
+                            <input type="date" id="editIssueDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                        <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+                    </div>
                 </div>
             </div>
 
